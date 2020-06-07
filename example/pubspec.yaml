@@ -1,0 +1,33 @@
+name: example
+description: A Example for testing
+
+version: 0.0.4+3
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  after_layout: ^1.0.7+2
+  auto_size_text: ^2.1.0
+  cupertino_icons: ^0.1.3
+  flutter:
+    sdk: flutter
+  hud_scaffold:
+    git:
+      url: https://github.com/GitHubStuff/hud_scaffold.git
+  sqlite_controller:
+    path: ../
+  shared_preferences: ^0.5.6+2
+  tracers:
+    git:
+      url: https://github.com/GitHubStuff/tracers.git
+  mode_theme:
+    git:
+      url: https://github.com/GitHubStuff/mode_theme.git
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
