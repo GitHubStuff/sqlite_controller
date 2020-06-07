@@ -5,8 +5,7 @@ For apps with a single database file, this provides a singleton and useful sqlit
 ## import statement template
 
 <pre>
-import 'package:sqlite_controller
-sqlite_controller.dart' as SQL;
+import 'package:sqlite_controller sqlite_controller.dart' as SQL;
 
 final controller = await SQL.SqliteController.initialize(name: 'Test.db');
 
