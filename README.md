@@ -1,4 +1,4 @@
-# flutter_sqlite_controller
+# sqlite_controller
 
 For apps with a single database file, this provides a singleton and useful sqlite helpers. That is, it creates a singleton.
 
