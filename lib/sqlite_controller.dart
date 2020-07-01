@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:path/path.dart' as Path;
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:tracers/tracers.dart' as Log;
+
+import 'src/sqlite_errors.dart';
 
 export 'src/sql_helpers.dart';
 export 'src/sql_parse.dart';
 export 'src/sqlite_errors.dart';
 export 'src/sqlite_identity.dart';
-export 'src/sqlite_link.dart';
 
 ///--
 /// As part of the sqflite flutter package sqlite uses a callback method on database initialize to allow
@@ -18,11 +20,6 @@ export 'src/sqlite_link.dart';
 typedef DBCreate = Future<void> Function(Database db, int old, [int newv]);
 typedef DBUpgrade = Future<void> Function(Database db, int old, [int newv]);
 
-/// Keys used in json bridging between sqlite records and objects.
-/// Any object that contains property that is a class or an array, will be linked to companion sqlite table
-/// that holds the properties of the root objects arrays and classes
-const String parentRowidKey = 'parentRowid';
-const String parentTableNameKey = 'parentTableName';
 const String rowidKey = 'rowid';
 
 class SqliteController {
@@ -40,28 +37,16 @@ class SqliteController {
   /// because database set up is an async process and must go through the static 'initialize()' method.
   SqliteController._private(this._databaseSingleton, this.name, this.fullPathName);
 
-  /// TODO: Experimental
-  /// Fetches the next rowid value by creating a transaction that inserts a dummy record to get the rowid, then
-  /// throws an Exception to to cancel the transaction (effectively a rollback).
-  static Future<int> getNextRowidFor({@required String table}) async {
-    int rowId = -1;
-    await database.transaction((action) async {
-      try {
-        rowId = await action.insert(table, null);
-        throw Exception('To rollback the transaction');
-      } finally {
-        debugPrint('flutter_sqlite_controller.dart - Forced error to rollback transaction (rowId = $rowId)');
-      }
-    }, exclusive: true);
-
-    return rowId;
-  }
-
   /// As SQLite is stored on the device, a database path to the name of a usable
   /// directory is needed for both iOS/Android platforms. For simplified error checking
   /// the method returns the path(as a String) on success or error(as dynamic). This
   /// allows for checking using 'is' operator on the type returned.
   static Future<dynamic> _getDatabasePath(String databaseName) async {
+    if (databaseName == null) {
+      Log.e('{sqlite_controller.dart} Database name is null');
+      throw SQLiteCannotGetDatabasePath('Database name is null', 1001);
+    }
+
     try {
       /// Get a path from the package that is device specific
 
@@ -75,7 +60,8 @@ class SqliteController {
       }
       return path;
     } catch (error) {
-      return error;
+      Log.e('{sqlite_controller.dart} ${error.toString()}');
+      throw SQLiteCannotGetDatabasePath(error.toString(), 1000);
     }
   }
 
@@ -93,6 +79,10 @@ class SqliteController {
     DBCreate create,
     DBUpgrade upgrade,
   }) async {
+    if (name == null) {
+      Log.e('{sqlite_controller.dart} Database name is null');
+      throw SQLiteCannotGetDatabasePath('Database name is null', 1001);
+    }
     try {
       /// If there already is an instance, check if the version number passed is different than
       /// than the current version of singleton, if they are different this means a probably upgrade
@@ -114,8 +104,8 @@ class SqliteController {
       _singleton = SqliteController._private(database, name, path);
       return _singleton;
     } catch (error) {
-      debugPrint('${error.toString()}');
-      return null;
+      Log.e('{sqlite_controller.dart} ${error.toString()}');
+      throw SQLiteFailedToInitializeDatabase('Could not initialize database $name, ${error.toString()}', 1002);
     }
   }
 
@@ -126,7 +116,8 @@ class SqliteController {
       await _databaseSingleton.execute(sql);
       return null;
     } catch (error) {
-      return error;
+      Log.e('{sqlite_controller.dart} ${error.toString()}');
+      throw SQLiteFailedToInitializeDatabase('Could not drop table $name, ${error.toString()}', 1005);
     }
   }
 
@@ -139,7 +130,8 @@ class SqliteController {
       _singleton = null;
       return null;
     } catch (error) {
-      return error;
+      Log.e('{sqlite_controller.dart} ${error.toString()}');
+      throw SQLiteFailedToInitializeDatabase('Could not removeDatabase, ${error.toString()}', 1005);
     }
   }
 }

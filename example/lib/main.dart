@@ -10,7 +10,6 @@ void main() => runApp(ExampleApp());
 class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Log.SetLevel(Log.VERBOSE);
     return ModeTheme(
       themeDataFunction: (brightness) => (brightness == Brightness.light) ? ModeTheme.light : ModeTheme.dark,
       defaultBrightness: Brightness.light,
